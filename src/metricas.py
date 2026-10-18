@@ -1,4 +1,4 @@
-"""Caracterização estrutural e decomposição k-core com python-igraph."""
+"""Medidas da estrutura das redes e dos seus núcleos k-core."""
 
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ def _exigir_nao_direcionado(grafo: ig.Graph, operacao: str) -> None:
 
 
 def _assinatura_estrutura(grafo: ig.Graph) -> str:
-    """Assinatura barata para identificar cache compatível com a topologia."""
+    """Confere se as medidas guardadas ainda servem para as mesmas ligações."""
     digest = hashlib.sha256()
     digest.update(b"D" if grafo.is_directed() else b"U")
     digest.update(str(grafo.vcount()).encode("ascii"))
@@ -44,13 +44,13 @@ def _valor_finito(valor: Any) -> Any:
 
 
 def caracterizar_rede(grafo: ig.Graph) -> Dict[str, Any]:
-    """Calcula medidas básicas; o diâmetro é medido na LCC.
+    """Calcula medidas gerais; o diâmetro é medido na maior componente (LCC).
 
-    Componentes são fracas quando o grafo é direcionado. Nesse caso, o
-    diâmetro mantém a orientação e considera apenas pares alcançáveis da LCC;
-    transitividade global não é definida como coeficiente não direcionado e
-    retorna ``None``. Para os datasets undirected do exercício, todas as
-    medidas são calculadas diretamente no grafo original simplificado.
+    Em uma rede direcionada, componentes fracas ignoram o sentido das ligações,
+    mas o diâmetro respeita esse sentido e considera apenas pares alcançáveis
+    dentro da LCC. A transitividade (medida de fechamento de triângulos) não é
+    calculada para redes direcionadas e retorna ``None``. Nas redes não
+    direcionadas do exercício, as medidas usam o grafo original simplificado.
     """
     _validar_grafo(grafo)
     n_vertices = grafo.vcount()
@@ -115,7 +115,7 @@ def _coreness_e_betweenness(grafo: ig.Graph) -> Tuple[List[int], List[float]]:
             pass
 
     coreness = [int(valor) for valor in grafo.coreness()]
-    # O script EaD3_Script1.R define directed = FALSE.
+    # O script EaD3_Script1.R também calcula essa medida sem direção.
     betweenness = [float(valor) for valor in grafo.betweenness(directed=False)]
     grafo.vs["coreness"] = coreness
     grafo.vs["betweenness"] = betweenness
@@ -124,12 +124,13 @@ def _coreness_e_betweenness(grafo: ig.Graph) -> Tuple[List[int], List[float]]:
 
 
 def analisar_kcore(grafo: ig.Graph) -> Dict[str, Any]:
-    """Calcula k-core máximo, seus vértices e betweenness exata original.
+    """Calcula o núcleo máximo (k-max) e medidas dos seus nós.
 
-    A assortatividade é de grau na rede original simplificada, seguindo a
-    caracterização da rede. ``grau_relativo`` no DataFrame é o grau interno ao
-    k-core dividido por ``n_kmax - 1``; para um núcleo com menos de dois nós,
-    define-se o valor como zero.
+    A assortatividade de grau indica se vértices tendem a se ligar a outros com
+    grau parecido; ela é medida na rede original simplificada. ``grau_relativo``
+    no DataFrame é o número de ligações dentro do núcleo dividido por
+    ``n_kmax - 1``. Se o núcleo tiver menos de dois vértices, o valor é zero.
+    A betweenness (intermediação) é calculada exatamente na rede original.
     """
     _validar_grafo(grafo)
     _exigir_nao_direcionado(grafo, "decomposição k-core e betweenness")

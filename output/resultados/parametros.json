@@ -10,7 +10,7 @@
     "nbclient": "0.10.2",
     "pytest": "8.4.2"
   },
-  "desempate": "ID original em ordem lexicográfica",
+  "desempate": "IDs originais em ordem de texto; por exemplo, 10 antes de 2",
   "aleatoriedade": "random.Random(123); sample sem reposição; nova rede em cada repetição",
   "apl": "pares alcançáveis da rede inteira; directed=False, unconn=True",
   "apl_lcc": "pares da maior componente conectada"

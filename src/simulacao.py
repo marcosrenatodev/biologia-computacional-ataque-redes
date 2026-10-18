@@ -1,4 +1,4 @@
-"""Simulações reproduzíveis de falhas e ataques em redes não direcionadas."""
+"""Simula remoções de vértices em redes não direcionadas."""
 
 from __future__ import annotations
 
@@ -48,14 +48,14 @@ def _validar_grafo(grafo: ig.Graph) -> List[str]:
 
 
 def _media_distancia(grafo: ig.Graph) -> float:
-    """Média de distâncias; pares inalcançáveis são excluídos, como no R."""
+    """Calcula a distância média entre pares alcançáveis, como no script R."""
     if grafo.vcount() < 2:
         return math.nan
     return float(grafo.average_path_length(directed=False, unconn=True))
 
 
 def _lcc(grafo: ig.Graph) -> ig.Graph:
-    """Retorna a componente maior, preservando ordem estável em empates."""
+    """Retorna a maior componente conectada; em empate, usa os IDs dos nós."""
     if grafo.vcount() == 0:
         return grafo.copy()
     componentes = grafo.connected_components()
@@ -79,7 +79,7 @@ def _estado(grafo: ig.Graph, n_original: int, usar_coreness_inicial: bool = Fals
         lcc = max(tamanhos)
         apl = _media_distancia(grafo)
         apl_lcc = apl if grafo.is_connected() else _media_distancia(_lcc(grafo))
-        # O coreness é dinâmico: após cada exclusão, recalculamos no grafo atual.
+        # O coreness muda com as remoções e é recalculado na rede atual.
         if usar_coreness_inicial and "coreness" in grafo.vs.attributes():
             cores = [int(c) for c in grafo.vs["coreness"]]
         else:
@@ -104,10 +104,13 @@ def simular_resiliencia(
     n_rep: int = 5,
     semente: int = 123,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Simula ataque por betweenness inicial e falhas aleatórias sem reposição.
+    """Compara remoções por intermediação e falhas escolhidas ao acaso.
 
-    O ataque mantém o ranking calculado na rede original. Cada falha aleatória
-    começa novamente na rede original e usa um ``random.Random`` independente.
+    O ataque segue a ordem da betweenness (intermediação) calculada uma única
+    vez na rede original; empates são resolvidos pelo ID. Cada repetição aleatória
+    também começa na rede original e escolhe vértices sem reposição. Um único
+    ``random.Random(semente)`` é criado para a chamada e usado em sequência: o
+    estado do gerador avança a cada repetição, em vez de reiniciar para cada uma.
     """
     nomes = _validar_grafo(g)
     if not isinstance(n_remover, int) or n_remover < 0:

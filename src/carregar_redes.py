@@ -1,4 +1,4 @@
-"""Importação e validação das redes reais usadas no Exercício 3."""
+"""Leitura e conferência das redes reais usadas no Exercício 3."""
 
 from __future__ import annotations
 
@@ -20,11 +20,11 @@ URL_POWER_GRID = "https://nrvis.com/download/data/inf/inf-power.zip"
 
 
 class ErroFormatoRede(ValueError):
-    """Indica que o arquivo não corresponde ao formato de rede esperado."""
+    """Indica que o arquivo não segue o formato esperado para uma rede."""
 
 
 def _baixar_arquivo(url: str, caminho: Path) -> None:
-    """Baixa um arquivo para o caminho indicado, sem deixar downloads parciais."""
+    """Baixa o arquivo sem deixar uma cópia incompleta no destino."""
     caminho.parent.mkdir(parents=True, exist_ok=True)
     fd, temporario = tempfile.mkstemp(
         prefix=f".{caminho.name}.", suffix=".part", dir=str(caminho.parent)
@@ -72,7 +72,7 @@ def _sha256(caminho: Path) -> str:
 def _registrar_fonte(
     diretorio_dados: Path, chave: str, url: str, arquivo: Path
 ) -> None:
-    """Registra proveniência do arquivo de origem que foi realmente lido."""
+    """Guarda a origem e a soma de verificação do arquivo lido."""
     manifest = diretorio_dados / "fontes.json"
     dados = {}
     if manifest.is_file():
@@ -113,10 +113,10 @@ def _abrir_facebook(caminho: Path) -> IO[str]:
 def carregar_facebook(
     caminho: str | Path = "data/facebook_combined.txt.gz", baixar: bool = True
 ) -> ig.Graph:
-    """Carrega o edge list SNAP em um grafo não direcionado e simplificado.
+    """Lê a lista de arestas (pares de IDs) do SNAP como rede simples.
 
-    O arquivo registra apenas arestas; portanto, como no formato original, não
-    declara vértices isolados. Os IDs são preservados como strings em ``name``.
+    Como o arquivo registra apenas pares ligados, ele não informa sobre vértices
+    isolados. Os IDs originais são guardados como texto no atributo ``name``.
     """
     caminho = Path(caminho)
     _garantir_arquivo(caminho, URL_FACEBOOK, baixar)
@@ -277,11 +277,11 @@ def _decodificar_stream(entrada: IO[bytes]) -> IO[str]:
 def carregar_power_grid(
     caminho: str | Path = "data/inf-power.zip", baixar: bool = True
 ) -> ig.Graph:
-    """Carrega Western US Power Grid do ZIP Network Repository/MatrixMarket.
+    """Lê a rede elétrica do oeste dos EUA em ZIP ou arquivo MatrixMarket.
 
-    O cabeçalho simétrico declara a rede como não direcionada. O tamanho da
-    matriz define todos os vértices, inclusive os isolados. IDs preservados são
-    os índices originais MatrixMarket em base 1, representados como strings.
+    O cabeçalho informa que as ligações são simétricas, portanto a rede não tem
+    direção. As dimensões da matriz também preservam vértices isolados. Os IDs
+    originais (que começam em 1) são guardados como texto.
     """
     caminho = Path(caminho)
     _garantir_arquivo(caminho, URL_POWER_GRID, baixar)
@@ -305,7 +305,7 @@ def carregar_power_grid(
 def carregar_redes(
     diretorio: str | Path = "data", baixar: bool = True
 ) -> dict[str, ig.Graph]:
-    """Carrega as duas redes reais e devolve-as indexadas por nome."""
+    """Lê as duas redes e devolve um dicionário com cada nome e seu grafo."""
     diretorio = Path(diretorio)
     facebook = carregar_facebook(diretorio / "facebook_combined.txt.gz", baixar=baixar)
     power_grid = carregar_power_grid(diretorio / "inf-power.zip", baixar=baixar)

@@ -1,4 +1,4 @@
-"""Gráficos e exportação dos resultados da atividade."""
+"""Cria gráficos e salva tabelas com os resultados da atividade."""
 
 from __future__ import annotations
 
@@ -17,19 +17,18 @@ _CORES_ESTRATEGIA = {"Ataque direcionado": "#c43c39", "Falha aleatória": "#2468
 
 
 def _caminho_layout(g: ig.Graph, semente: int):
-    """Calcula um layout FR com inicialização e gerador reprodutíveis."""
+    """Posiciona os vértices pelo método Fruchterman–Reingold (FR), com semente fixa."""
     estado_rng = random.Random(semente)
     ig.set_random_number_generator(estado_rng)
     try:
         return g.layout_fruchterman_reingold(niter=500, grid="auto")
     finally:
-        # Retorna o gerador ao padrão da biblioteca para evitar efeitos
-        # sobre outras partes do notebook.
+        # Restaura o gerador padrão da biblioteca para não afetar o notebook.
         ig.set_random_number_generator(None)
 
 
 def plotar_rede(g: ig.Graph, nome: str, arquivo: Path, semente: int = 123) -> Path:
-    """Salva a rede com coreness, betweenness e núcleo máximo destacados."""
+    """Desenha a rede; cor indica o núcleo e tamanho indica a intermediação."""
     if g.is_directed():
         raise ValueError("A visualização exige um grafo não direcionado")
     if not g.is_simple():
@@ -51,7 +50,7 @@ def plotar_rede(g: ig.Graph, nome: str, arquivo: Path, semente: int = 123) -> Pa
     coords = layout.coords
     fig, ax = plt.subplots(figsize=(12, 9), constrained_layout=True)
 
-    # A área cresce linearmente com a betweenness relativa.
+    # A área tem um tamanho mínimo e cresce com a intermediação relativa.
     maior = max(between, default=0.0)
     tamanhos = [12 + 80 * (v / maior) for v in between] if maior else [12] * len(between)
     x = [p[0] for p in coords]
@@ -70,15 +69,15 @@ def plotar_rede(g: ig.Graph, nome: str, arquivo: Path, semente: int = 123) -> Pa
         ax.scatter([x[i] for i in no_core], [y[i] for i in no_core], s=[tamanhos[i] * 1.8 for i in no_core],
                    facecolors="none", edgecolors="#e63946", linewidths=0.8, zorder=3)
     barra = fig.colorbar(pontos, ax=ax, shrink=0.78, pad=0.02)
-    barra.set_label("Coreness")
+    barra.set_label("Coreness (maior k do nó)")
     legenda = [
         Line2D([0], [0], marker="o", color="w", markerfacecolor="#888888", markeredgecolor="#273142",
-               markersize=5, label="Área dos nós escalada pela betweenness"),
+               markersize=5, label="Área dos nós indica intermediação (betweenness)"),
         Line2D([0], [0], marker="o", color="w", markerfacecolor="none", markeredgecolor="#e63946",
-               markeredgewidth=1.4, markersize=8, label=f"Núcleo máximo (k-max = {int(kmax)})"),
+               markeredgewidth=1.4, markersize=8, label=f"Núcleo k-core máximo (k = {int(kmax)})"),
     ]
     ax.legend(handles=legenda, loc="best", frameon=True, fontsize=9)
-    ax.set_title(f"{nome}\nDecomposição k-core e betweenness (k-max = {int(kmax)})")
+    ax.set_title(f"{nome}\nNúcleos k-core e intermediação (k máximo = {int(kmax)})")
     ax.autoscale()
     ax.set_aspect("equal", adjustable="datalim")
     ax.axis("off")
@@ -96,8 +95,8 @@ def _salvar_linhas(
     ylabel: str,
     limite_y: Optional[tuple] = None,
 ) -> Path:
-    # As escalas comuns permitem comparar redes, mas podem esconder mudanças
-    # de uma unidade. Nos indicadores de núcleo, mostramos também um detalhe.
+    # A escala comum facilita comparar redes, mas pode esconder variações
+    # pequenas. Para os indicadores do núcleo, também mostramos um detalhe.
     detalhar = y in {"kmax", "n_kmax"}
     fig, eixos = plt.subplots(
         1, 2 if detalhar else 1,
@@ -122,8 +121,8 @@ def _salvar_linhas(
             ax.set_ylim(*limites)
         ax.grid(True, alpha=0.25)
     if detalhar:
-        eixos[0].set_title("Escala comum às redes")
-        eixos[1].set_title("Detalhe da variação (eixo Y ampliado)")
+        eixos[0].set_title("Mesma escala para todas as redes")
+        eixos[1].set_title("Detalhe: eixo vertical ampliado")
         fig.suptitle(titulo)
     else:
         eixos[0].set_title(titulo)
@@ -134,7 +133,7 @@ def _salvar_linhas(
 
 
 def plotar_resiliencia(medias: pd.DataFrame, diretorio: Path) -> List[Path]:
-    """Gera gráficos por rede e comparações com escalas compartilhadas."""
+    """Cria gráficos por rede e comparações usando escalas iguais."""
     colunas = {"rede", "estrategia", "passo", "lcc_frac", "apl", "apl_lcc", "kmax", "n_kmax"}
     faltando = colunas - set(medias.columns)
     if faltando:
@@ -143,10 +142,10 @@ def plotar_resiliencia(medias: pd.DataFrame, diretorio: Path) -> List[Path]:
     diretorio.mkdir(parents=True, exist_ok=True)
     arquivos: List[Path] = []
     medidas = [
-        ("lcc_frac", "LCC (fração da rede original)", (0.0, 1.05)),
-        ("apl", "Caminho médio (pares alcançáveis)", _limite_comparativo(medias, "apl")),
+        ("lcc_frac", "LCC / total original de nós", (0.0, 1.05)),
+        ("apl", "Caminho médio entre pares alcançáveis", _limite_comparativo(medias, "apl")),
         ("apl_lcc", "Caminho médio na LCC", _limite_comparativo(medias, "apl_lcc")),
-        ("kmax", "K-core máximo (k-max)", _limite_comparativo(medias, "kmax")),
+        ("kmax", "k-max (valor do núcleo máximo)", _limite_comparativo(medias, "kmax")),
         ("n_kmax", "Nós no núcleo máximo", _limite_comparativo(medias, "n_kmax")),
     ]
     redes = list(pd.unique(medias["rede"]))
@@ -159,8 +158,9 @@ def plotar_resiliencia(medias: pd.DataFrame, diretorio: Path) -> List[Path]:
                 f"{rede}: {ylabel}", ylabel, limite,
             ))
 
-    # Os mesmos indicadores compartilham limites entre redes. k-max e n-kmax
-    # são normalizados pelo valor inicial de cada rede para comparação.
+    # Os mesmos indicadores usam limites iguais em todas as redes. Para
+    # comparar redes de tamanhos diferentes, dividimos k-max e n-kmax pelo
+    # valor inicial de cada rede.
     comparacao = medias.copy()
     comparacao["kmax_norm"] = _normalizar_por_inicial(comparacao, "kmax")
     comparacao["n_kmax_norm"] = _normalizar_por_inicial(comparacao, "n_kmax")
@@ -172,11 +172,11 @@ def plotar_resiliencia(medias: pd.DataFrame, diretorio: Path) -> List[Path]:
         "n_kmax_norm": _limite_comparativo(comparacao, "n_kmax_norm"),
     }
     for medida, ylabel, limite in [
-        ("lcc_frac", "LCC (fração da rede original)", limites["lcc_frac"]),
-        ("apl", "Caminho médio (pares alcançáveis)", limites["apl"]),
+        ("lcc_frac", "LCC / total original de nós", limites["lcc_frac"]),
+        ("apl", "Caminho médio entre pares alcançáveis", limites["apl"]),
         ("apl_lcc", "Caminho médio na LCC", limites["apl_lcc"]),
-        ("kmax_norm", "k-max / k-max inicial", limites["kmax_norm"]),
-        ("n_kmax_norm", "n-kmax / n-kmax inicial", limites["n_kmax_norm"]),
+        ("kmax_norm", "k-max / valor inicial", limites["kmax_norm"]),
+        ("n_kmax_norm", "Nós no núcleo máximo / valor inicial", limites["n_kmax_norm"]),
     ]:
         arquivo = diretorio / f"comparativo_{medida}.png"
         arquivos.append(_salvar_comparativo(comparacao, medida, ylabel, arquivo, limite))
@@ -243,7 +243,7 @@ def _salvar_comparativo(dados: pd.DataFrame, medida: str, ylabel: str, arquivo: 
 
 
 def exportar_resultados(detalhes: pd.DataFrame, medias: pd.DataFrame, alvos: pd.DataFrame, diretorio: Path) -> List[Path]:
-    """Exporta as três tabelas em CSV UTF-8 e devolve os caminhos salvos."""
+    """Salva detalhes, médias e alvos em CSV UTF-8 e devolve os caminhos."""
     diretorio = Path(diretorio)
     diretorio.mkdir(parents=True, exist_ok=True)
     tabelas = [
