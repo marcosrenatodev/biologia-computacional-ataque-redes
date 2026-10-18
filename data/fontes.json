@@ -1,0 +1,12 @@
+{
+  "Facebook": {
+    "arquivo": "facebook_combined.txt.gz",
+    "sha256": "125e84db872eeba443d270c70315c256b0af43a502fcfe51f50621166ad035d7",
+    "url": "https://snap.stanford.edu/data/facebook_combined.txt.gz"
+  },
+  "Power Grid": {
+    "arquivo": "inf-power.zip",
+    "sha256": "ea5aac207591d6dd863f470641a617aa87059a923282bea9d969335a9904f606",
+    "url": "https://nrvis.com/download/data/inf/inf-power.zip"
+  }
+}

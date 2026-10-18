@@ -1,0 +1,3 @@
+rede,n_vertices,n_arestas,direcionada,densidade,diametro,transitividade_global,n_componentes,lcc,kmax,n_kmax,densidade_kmax,assortatividade,alvos_no_kmax_original
+Facebook,4039,88234,False,0.010819963503439287,8,0.5191742775433075,1,4039,115,158,0.8984923002499395,0.06357722918564915,1
+Power Grid,4941,6594,False,0.0005403026973346215,46,0.10315322452860085,1,4941,5,12,0.5454545454545454,0.0034569877442046106,0

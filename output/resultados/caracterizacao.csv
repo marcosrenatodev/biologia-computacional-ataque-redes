@@ -1,0 +1,3 @@
+rede,n_vertices,n_arestas,direcionada,densidade,diametro,transitividade_global,n_componentes,lcc
+Facebook,4039,88234,False,0.010819963503439287,8,0.5191742775433075,1,4039
+Power Grid,4941,6594,False,0.0005403026973346215,46,0.10315322452860085,1,4941

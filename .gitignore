@@ -1,0 +1,19 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+.jupyter/
+.ipython/
+.cache/
+.DS_Store
+
+# Configurações locais do editor e do ambiente de execução.
+.vscode/
+.idea/
+.agents/
+.codex/
+.aws/
+.env
+.env.*
+!.env.example

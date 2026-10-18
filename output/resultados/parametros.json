@@ -1,0 +1,17 @@
+{
+  "n_remover": 10,
+  "n_rep": 5,
+  "semente": 123,
+  "python": "3.9.0",
+  "versoes": {
+    "igraph": "0.11.9",
+    "pandas": "2.2.3",
+    "matplotlib": "3.9.4",
+    "nbclient": "0.10.2",
+    "pytest": "8.4.2"
+  },
+  "desempate": "ID original em ordem lexicográfica",
+  "aleatoriedade": "random.Random(123); sample sem reposição; nova rede em cada repetição",
+  "apl": "pares alcançáveis da rede inteira; directed=False, unconn=True",
+  "apl_lcc": "pares da maior componente conectada"
+}
